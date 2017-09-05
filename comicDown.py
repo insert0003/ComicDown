@@ -49,7 +49,6 @@ class DownThread(threading.Thread):
                     localfile.write(img.read())
                     img.close()
                     localfile.close()
-                    break
             os.chdir(comicDir)
             mutex[self.mutexID].release()
 
