@@ -2,80 +2,114 @@
 # -*- coding: UTF-8 -*-
 
 import urllib
-import urllib2
-import os
+import os, sys
+
+import threading
+import time
 
 from bs4 import BeautifulSoup
 
+if sys.hexversion >= 0x3000000:
+	import urllib.request as urlreq
+else:
+	import urllib2 as urlreq
+
+mutex = [threading.Lock(), threading.Lock(), threading.Lock(), threading.Lock(), threading.Lock()]
+
+class DownThread(threading.Thread):
+    """comic down thread"""
+    def __init__(self, num, href, volumnDir):
+        super(DownThread, self).__init__()
+        self.mutexID = int(num) % 5
+        self.href = href
+        self.volumnDir = volumnDir
+
+    def run(self):
+        global mutex
+        time.sleep(1)
+        if mutex[self.mutexID].acquire():
+            if not os.path.exists(self.volumnDir):
+                os.makedirs(self.volumnDir)
+            os.chdir(self.volumnDir)
+
+            print     
+            indexpage = urlreq.urlopen(self.href)
+            index = indexpage.read().decode("utf-8", "replace")
+            indexpage.close()
+            soup = BeautifulSoup(index, "lxml")
+            nav = soup.find("select").findAll("option")
+            index = 0
+            for mh in nav:
+                mhhref = mh.get("value")
+                if mhhref:
+                    index = index + 1
+                    pic = getImage(mhhref)
+                    img = urlreq.urlopen(pic)
+                    fname = self.volumnDir+str(index).zfill(2)+".jpg"
+                    print("save to file: ", fname)
+                    localfile = open(fname,'wb')
+                    localfile.write(img.read())
+                    img.close()
+                    localfile.close()
+                    break
+            mutex[self.mutexID].release()
+
 def main():
     file = open('comic.txt')
-    urls = file.readline()
+    comics = file.readlines()
     file.close()
-
-    url = urls.split(" ")[0] 
-    count = urls.split(" ")[1]
-    htmlfp = urllib2.urlopen(url)
-    html = htmlfp.read().decode("big5", "replace")
-    htmlfp.close()
-
-    soup = BeautifulSoup(html, "lxml")
-    mhnew = soup.findAll("table", {"width": '688'})
-    title = soup.find("title").text[:-14]
-    if not os.path.exists(title):
-        os.makedirs(title)
-    os.chdir(title)
-   
-    for obj in mhnew:
-        comic_index = obj.findAll("a")
-        for index in comic_index:
-            if(index == None):
-                continue
-            href = "http://www.cartoonmad.com" + index.get("href")
-            num = index.text.split(" ")[1]
-            if( int(num) > int(count) ):
-                getIndex(href, num)
-
-def getIndex(href, num):
-    indexpage = urllib2.urlopen(href)
-    index = indexpage.read().decode("utf-8", "replace")
-    indexpage.close()
-   
-    pdir = os.getcwd()
-    if not os.path.exists(num):
-        os.makedirs(num)
-    os.chdir(num)
     
-    soup = BeautifulSoup(index, "lxml")
-    nav = soup.find("select").findAll("option")
-    index = 0
-    for mh in nav:
-        mhhref = mh.get("value")
-        if mhhref:
-            index = index + 1
-            pic = getImage(mhhref)
-            img = urllib.urlopen(pic)
-            localfile = open(str(index).zfill(2)+".jpg",'wb')
-            localfile.write(img.read())
-            img.close()
-            localfile.close()
+    if not os.path.exists("download"):
+        os.makedirs("download")
     
-    os.chdir(pdir)
+    downDir = os.getcwd()+"/download"
+    print("downDir : ", downDir)
 
-    return
+    for urls in comics:
+        url = urls.split(" ")[0]
+        startCount = int(urls.split(" ")[1])
+
+        htmlfp = urlreq.urlopen(url)
+        html = htmlfp.read().decode("big5", "replace")
+        htmlfp.close()
+
+        soup = BeautifulSoup(html, "lxml")
+        mhnew = soup.findAll("table", {"width": '688'})
+        title = soup.find("title").text[:-14]
+        if(os.name == "posix"):
+            title = title.encode("utf8")
+
+        for obj in mhnew:
+            comic_index = obj.findAll("a")
+            for index in comic_index:
+                if(index == None):
+                    continue
+                if len(index.text.split(" ")) < 3:
+                    continue
+
+                href = "http://www.cartoonmad.com" + index.get("href")
+                num = int(index.text.split(" ")[1])
+                if( num > startCount ):
+                    print("Getting {} vol.{} from {}.".format(title, num, href))
+                    volumnDir = "{}/{}/{}/".format(downDir, title, num)
+                    mythread = DownThread(num, href, volumnDir)
+                    mythread.start()
+    return 
 
 def getImage(html):
     pagehref = "http://www.cartoonmad.com/comic/" + html
-    page = urllib2.urlopen(pagehref)
+    page = urlreq.urlopen(pagehref)
     body = page.read().decode("utf-8", "replace")
     page.close()
+    mhpic = ""
     
     soup = BeautifulSoup(body, "lxml")
-    mhpic = soup.find("img", {"oncontextmenu": 'return false'}).get("src")
-    print mhpic
+    mhsrc = soup.find("img", {"oncontextmenu": 'return false'})
+    if mhsrc != None:
+        mhpic = mhsrc.get("src")
+    print("image source: ", mhpic)
     
     return mhpic
 
 if __name__ == "__main__":
     main()
-
-
