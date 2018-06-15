@@ -51,7 +51,6 @@ class DownThread(threading.Thread):
                     localfile.write(img.read())
                     img.close()
                     localfile.close()
-                    break
             mutex[self.mutexID].release()
 
 def main():
