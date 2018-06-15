@@ -31,9 +31,9 @@ C:\Users\tte\AppData\Local\Programs\Python\Python36-32\Scripts\;
 
 
 ## 下载漫画
-通过下面命令可以从"comic.txt"里面，获取漫画地址和下载的开始话，
+通过下面命令可以从"comic.txt"里面，获取漫画地址,开始话,结束话
 然后下载到本地文件夹中。
-写法(忽略加号)： 漫画网址+空格+开始话
+写法(忽略加号)： 漫画网址+空格+开始话+空格+结束话
 
 <pre>
 python getComic.py

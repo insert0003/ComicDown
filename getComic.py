@@ -67,6 +67,7 @@ def main():
     for urls in comics:
         url = urls.split(" ")[0]
         startCount = int(urls.split(" ")[1])
+        endCount = int(urls.split(" ")[2])
 
         htmlfp = urlreq.urlopen(url)
         html = htmlfp.read().decode("big5", "replace")
@@ -88,7 +89,7 @@ def main():
 
                 href = "http://www.cartoonmad.com" + index.get("href")
                 num = int(index.text.split(" ")[1])
-                if( num > startCount ):
+                if( num >= startCount and num <= endCount ):
                     print("Getting {} vol.{} from {}.".format(title, num, href))
                     volumnDir = "{}/{}/{}/".format(downDir, title, num)
                     mythread = DownThread(num, href, volumnDir)
