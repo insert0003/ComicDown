@@ -1,2 +1,17 @@
-http://www.cartoonmad.com/comic/4085.html 184
-http://www.cartoonmad.com/comic/1152.html 905
+{
+    "comic_count" : 2,
+    "comic_info" : {
+        "1" :
+        {
+            "url" : "http://www.cartoonmad.com/comic/4085.html",
+            "start" : 184,
+            "end" : 184
+        },
+        "2" : 
+        {
+            "url" : "http://www.cartoonmad.com/comic/1152.html",
+            "start" : 905,
+            "end" : 905
+        }
+    }
+}
