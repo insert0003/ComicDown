@@ -21,8 +21,11 @@ class DownThread(threading.Thread):
     def __init__(self, num, href, volumnDir):
         super(DownThread, self).__init__()
         self.mutexID = int(num) % 5
-        self.href = href
         self.volumnDir = volumnDir
+        if href.startswith("http://"):
+            self.href = href.replace("http://", "https://")
+        else:
+            self.href = href
 
     def run(self):
         global mutex
@@ -74,7 +77,7 @@ def main():
         htmlfp.close()
 
         soup = BeautifulSoup(html, "lxml")
-        mhnew = soup.findAll("table", {"width": '688'})
+        mhnew = soup.findAll("table", {"width": '800', "align": 'center'})
         title = soup.find("title").text[:-14]
         if(os.name == "posix"):
             title = title.encode("utf8")
@@ -87,7 +90,7 @@ def main():
                 if len(index.text.split(" ")) < 3:
                     continue
 
-                href = "http://www.cartoonmad.com" + index.get("href")
+                href = "https://www.cartoonmad.com" + index.get("href")
                 num = int(index.text.split(" ")[1])
                 if( num >= startCount and num <= endCount ):
                     print("Getting {} vol.{} from {}.".format(title, num, href))
@@ -97,7 +100,7 @@ def main():
     return 
 
 def getImage(html):
-    pagehref = "http://www.cartoonmad.com/comic/" + html
+    pagehref = "https://www.cartoonmad.com/comic/" + html
     page = urlreq.urlopen(pagehref)
     body = page.read().decode("utf-8", "replace")
     page.close()
